@@ -92,16 +92,29 @@ int pthreads_state_unset_locked(pthreads_state state, int mask TSRMLS_DC) {
 /* {{{ set state on state object */
 zend_bool pthreads_state_set(pthreads_state state, int mask TSRMLS_DC) {
 	zend_bool locked, result = 1;
-	
+
+        printf("%lX is in pthreads_state_set() PHP line: %d\n", (unsigned long)tsrm_ls, zend_get_executed_lineno(TSRMLS_C));
+
+	if (PTHREADS_ZG(changingState)) {
+		printf("\n HEY!! I (%lX) am already in there!: %d\n", (unsigned long)tsrm_ls, PTHREADS_ZG(changingState));
+	}
+
 	if (state) {
+		    PTHREADS_ZG(changingState) = 1;
 		if (pthreads_lock_acquire(state->lock, &locked TSRMLS_CC)) {
+                    PTHREADS_ZG(changingState) = 2;
 			state->was |= mask;
+                    PTHREADS_ZG(changingState) = 3;
 			pthreads_synchro_notify(
 				state->synchro TSRMLS_CC
 			);
+                    PTHREADS_ZG(changingState) = 4;
 			state->bits |= mask;
+                    PTHREADS_ZG(changingState) = 11;
 			pthreads_lock_release(state->lock, locked TSRMLS_CC);
+                    PTHREADS_ZG(changingState) = 12;
 		} else result = 0;
+		PTHREADS_ZG(changingState) = 0;
 	} else result = 0;
 	return result;
 } /* }}} */

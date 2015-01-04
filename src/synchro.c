@@ -90,11 +90,19 @@ int pthreads_synchro_wait(pthreads_synchro sync TSRMLS_DC) {
 /* {{{ send notification to synchronization object */
 int pthreads_synchro_notify(pthreads_synchro sync TSRMLS_DC) {
 	int result = FAILURE;
+                    PTHREADS_ZG(changingState) = 5;
 	if (sync) {
+                    PTHREADS_ZG(changingState) = 6;
 		if ((result = pthread_cond_broadcast(&sync->notify))!=SUCCESS) {
+                    PTHREADS_ZG(changingState) = 7;
 				/* report error */
 		}
-	} else { /* report unknown error */ }
+                    PTHREADS_ZG(changingState) = 8;
+	} else {
+                    PTHREADS_ZG(changingState) = 9;
+            
+            /* report unknown error */ }
+                    PTHREADS_ZG(changingState) = 10;
 	return (result == SUCCESS) ? 1 : 0;
 } /* }}} */
 

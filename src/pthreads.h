@@ -91,6 +91,7 @@ ZEND_EXTERN_MODULE_GLOBALS(pthreads)
 ZEND_BEGIN_MODULE_GLOBALS(pthreads)
 	pid_t pid;
 	int   signal;
+	int   changingState;
 	void *pointer;
 	HashTable *resolve;
 	HashTable *resources;

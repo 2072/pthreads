@@ -125,6 +125,7 @@ static inline void pthreads_globals_ctor(zend_pthreads_globals *pg TSRMLS_DC) {
 	pg->pointer = NULL;
 	pg->pid = 0L;
 	pg->signal = 0;
+	pg->changingState = 0;
 	pg->resources = NULL;
 	pg->resolve = NULL;
 }

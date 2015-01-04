@@ -659,7 +659,8 @@ int pthreads_join(PTHREAD thread TSRMLS_DC) {
 	int dojoin = 0;
 	int donotify = 0;
 	zend_bool slocked;
-	
+
+	printf("Joining from %lX... from php line %d\n", (unsigned long)tsrm_ls, zend_get_executed_lineno(TSRMLS_C));
 	if (pthreads_state_lock(thread->state, &slocked TSRMLS_CC)) {
 		if (pthreads_state_check(thread->state, PTHREADS_ST_STARTED TSRMLS_CC) && 
 			!pthreads_state_check(thread->state, PTHREADS_ST_JOINED TSRMLS_CC)) {
@@ -804,16 +805,44 @@ int pthreads_internal_unserialize(zval **object, zend_class_entry *ce, const uns
 #ifdef PTHREADS_KILL_SIGNAL
 static inline void pthreads_kill_handler(int signo) /* {{{ */
 {	
+	int stateSetResult = 0;
+	int stateChangeInProgress = 0;
 	TSRMLS_FETCH();
 	PTHREAD current = PTHREADS_ZG(pointer);
 	
 	if (current) {
-		pthreads_state_set(
+
+		stateChangeInProgress = PTHREADS_ZG(changingState);
+
+		stateSetResult = pthreads_state_set(
 		    current->state, PTHREADS_ST_ERROR TSRMLS_CC);
 		pthreads_error_save(current->error TSRMLS_CC);
 	}
 	
 	PTHREADS_ZG(signal) = signo;
+	if (stateChangeInProgress) {
+		printf("\nI (%lX) was murdered while changing state: %d! (on kill pthreads_state_set() returned: %d)\n"
+				, (unsigned long)tsrm_ls
+				, stateChangeInProgress
+				, stateSetResult
+				);
+	} else {
+		printf("\nI (%lX) was murdered just like that! (on kill pthreads_state_set() returned: %d)\n"
+				, (unsigned long)tsrm_ls
+				, stateSetResult
+				);
+	}
+
+	if (stateChangeInProgress == 6) {
+		printf("we were killed while in 'pthread_cond_broadcast()' a dead lock is on the move. Sleeping for 120s\n");
+		php_sleep(120);
+	}
+
+	if (current) {
+		printf("killed on line: %d with message %s", current->error->line, current->error->message);
+	}
+
+
 	zend_bailout();
 } /* }}} */
 #endif
